@@ -1,7 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.callback_data import CallbackData
 from SQLBD import SQL
-from statemash import AddBike
 
 BD = SQL()
 
@@ -15,7 +14,7 @@ addNewBike = InlineKeyboardButton("Добавить новый байк", callba
 addNewOwner = InlineKeyboardButton("Добавить нового оунера", callback_data="addNewOwner")
 sushi = InlineKeyboardButton("Заправился, спасибо)", callback_data="sushi")
 Kosiak = InlineKeyboardButton("QR не работает", callback_data="Kosiak")
-
+cancel = InlineKeyboardButton(f'Отменить заполнение', callback_data="cancel")
 def cancelOperation():
     """Кнопка закрывания текущего действия"""
     return InlineKeyboardMarkup(
@@ -29,9 +28,18 @@ def knopkaADDAccount(id, username):
         (id=id, username=username))]])
 
 knopkaAgent = CallbackData('siski', 'agent')
-def makeButtonagent():
+def makeButtonAgent():
     buttons = InlineKeyboardMarkup(row_width=1)
     list = BD.makeButtonagentSQL()
     button_list = [InlineKeyboardButton(text=f"{name[1]}", callback_data=knopkaAgent.new(agent=name[1])) for name in list]
     buttons.add(*button_list)
+    return buttons
+
+knopkaFreeBikes = CallbackData('sosiski', 'RegNumber')
+def makeButtonBikes():
+    buttons = InlineKeyboardMarkup(row_width=1)
+    list = BD.checkFreeBikesSQL()
+    button_list = [InlineKeyboardButton(text=f"{name[0]}, {name[1]}, {name[2]}", callback_data=knopkaFreeBikes.new(RegNumber=name[1])) for name in list]
+    buttons.add(*button_list)
+    print(buttons)
     return buttons

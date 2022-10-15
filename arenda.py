@@ -6,7 +6,7 @@ from aiogram.utils import executor
 import buttons as but
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
-from statemash import AddBike, AddOwner
+from statemash import AddBike, AddOwner, AddQRPetrol
 
 BD = SQL()
 BD.checkDB()
@@ -19,7 +19,7 @@ async def begin(message: types.Message):
     markup = InlineKeyboardMarkup(row_width=1)
     if message.chat.id in id_dopusk:
         markup.add(but.newWeekStart, but.GiveQR, but.ShowFreeBikes, but.somethingNew)
-        await bot.send_message(message.chat.id, f"На данный момент есть свободных байков:")
+        await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
         markup.add(but.GiveQRclient)
@@ -27,7 +27,6 @@ async def begin(message: types.Message):
         await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?\n"
                              f"до конца недели осталось {count}L", reply_markup=markup)
     else:
-        print(but.knopkaADDAccount(message.chat.id, message.chat.username))
         if message.chat.username == None:
             await bot.send_message(message.chat.id, f"доброе утро\nА потом мопед заправим.")
             await bot.send_message(id_gosha, f"Кто-то {message.chat.first_name} хочет топлива\n"
@@ -93,7 +92,7 @@ async def CourseChoise(message: types.Message, state: FSMContext):
     data = await state.get_data()
     NewBike = (data['Model'], data['RegNumber'])
     await state.finish()
-    await message.answer(f"Оунер байка", reply_markup=but.makeButtonagent())
+    await message.answer(f"Оунер байка", reply_markup=but.makeButtonAgent())
 
 @dp.callback_query_handler(but.knopkaAgent.filter())  # adds the account to the table
 async def button_hendler(call: types.callback_query, callback_data: dict, state: FSMContext):
@@ -116,11 +115,16 @@ async def get_address(message: types.Message, state: FSMContext):
     await AddBike.photo.set()
     await message.answer("Добавь фотографию байка", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddBike.photo) #дописать загрузку фотографий
+@dp.message_handler(state=AddBike.photo, content_types=['photo']) #дописать загрузку фотографий
 async def get_photo(message: types.Message, state: FSMContext):
-    await state.update_data(photo=message.text)
+    await state.update_data(photo=message.photo)
+    # ph = message.photo
+    # await bot.send_photo(message.chat.id, message.photo[-1])
+    name = message.photo[0].file_unique_id + ".jpeg"
+    await message.photo[-1].download(name)
+    await message.answer("QR добавлен в базу")
 
-
+    #
     # data = await state.get_data()
     # BD.addBikeToSQL(data)
     # await state.finish()
@@ -144,11 +148,40 @@ async def CourseChoise(message: types.Message, state: FSMContext):
     await message.answer(f"Oунер сохранен")
     await state.finish()
 
+@dp.callback_query_handler(lambda c: c.data == 'DownoadQR', state=None)  #добавление QR в базу
+async def continueReg(call: types.callback_query):
+    await AddQRPetrol.RegNumber.set()
+    await bot.send_message(call.message.chat.id, "Номер байка к которому привязан QR", reply_markup=but.cancelOperation())
+
+@dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает контакт оунера
+async def CourseChoise(message: types.Message, state: FSMContext):
+    await state.update_data(RegNumber=message.text)
+    await AddQRPetrol.QRFile.set()
+    await message.answer(f"Добавить QR", reply_markup=but.cancelOperation())
+
+@dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #дописать загрузку фотографий
+async def get_photo_QR(message: types.Message, state: FSMContext):
+    await state.update_data(QRFile=message.photo)
+    # ph = message.photo
+    # await bot.send_photo(message.chat.id, message.photo[-1])
+    name = message.photo[0].file_unique_id + ".jpeg"
+    await message.photo[-1].download(name)
+    await message.answer("QR добавлен в базу")
+
+
 @dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
 async def cancel(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer("Заполнение прекращено")
 
+@dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  #даёт qr
+async def ShowFreeBikes(call: types.callback_query):
+    markup = InlineKeyboardMarkup().add(but.makeButtonBikes())
+    await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=markup)
+
+
+
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,
                            skip_updates=True)
+

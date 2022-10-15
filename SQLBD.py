@@ -31,7 +31,7 @@ class SQL:
             OwnerPrise INT,
             OwnerDayPrice INT,
             Profit INT,
-            Status TEXT,
+            Status NOT NULL DEFAULT free,
             PhotoLink TEXT
             )""")
         self.conn.commit()
@@ -159,3 +159,9 @@ class SQL:
             return self.cursor.fetchall()
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite", error)
+
+    def checkFreeBikesSQL(self):
+        """gives out a code with fuel"""
+        self.cursor.execute("SELECT Model, RegNumber, OwnerPrise, OwnerDayPrice  FROM Bikes WHERE Status = ?", ("free",))
+        name = self.cursor.fetchall()
+        return name
