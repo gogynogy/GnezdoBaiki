@@ -176,9 +176,7 @@ async def cancel(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  #даёт qr
 async def ShowFreeBikes(call: types.callback_query):
-    markup = InlineKeyboardMarkup().add(but.makeButtonBikes())
-    await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=markup)
-
+    await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes())
 
 
 if __name__ == '__main__':
