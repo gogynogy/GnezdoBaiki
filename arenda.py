@@ -4,9 +4,12 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils import executor
 import buttons as but
+import ossistem as osSiS
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
 from statemash import AddBike, AddOwner, AddQRPetrol
+
+osSiS.checkDir()
 
 BD = SQL()
 BD.checkDB()
@@ -155,18 +158,21 @@ async def continueReg(call: types.callback_query):
 
 @dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает контакт оунера
 async def CourseChoise(message: types.Message, state: FSMContext):
-    await state.update_data(RegNumber=message.text)
+    await state.update_data(RegNumber=message.text.upper())
     await AddQRPetrol.QRFile.set()
     await message.answer(f"Добавить QR", reply_markup=but.cancelOperation())
 
 @dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #дописать загрузку фотографий
 async def get_photo_QR(message: types.Message, state: FSMContext):
     await state.update_data(QRFile=message.photo)
-    # ph = message.photo
-    # await bot.send_photo(message.chat.id, message.photo[-1])
-    name = message.photo[0].file_unique_id + ".jpeg"
-    await message.photo[-1].download(name)
-    await message.answer("QR добавлен в базу")
+    data = await state.get_data()
+    name = data["RegNumber"]
+    if BD.addQRCode(name):
+        await message.photo[-1].download(destination_file=f'{osSiS.DirQR}/{name}.jpg')
+        await message.answer("QR добавлен в базу")
+    else:
+        await message.answer("QR уже в базе")
+    await state.finish()
 
 
 @dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие

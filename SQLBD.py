@@ -66,11 +66,11 @@ class SQL:
         finally:
             self.conn.commit()
 
-    def addSQL(self, message):
+    def addQRCode(self, message):
         """checks if the photo exists in the database and adds"""
-        name = message.photo[0].file_unique_id + ".jpeg"
+        name = message
         try:
-            self.cursor.execute("SELECT qrname FROM QRPetrol WHERE qrname = (?)", (name,))
+            self.cursor.execute("SELECT Qrname FROM QRPetrol WHERE Qrname = (?)", (name,))
             data = self.cursor.fetchone()
             if data is None:
                 self.cursor.execute(f"INSERT INTO QRPetrol (qrname) VALUES (?)", (name,))
