@@ -27,20 +27,20 @@ def knopkaADDAccount(id, username):
         inline_keyboard=[[InlineKeyboardButton(f'Добавить @{username} в клуб!', callback_data=cb.new
         (id=id, username=username))]])
 
-knopkaAgent = CallbackData('siski', 'agent')
+buttonAgent = CallbackData('siski', 'agent')
 def makeButtonAgent():
     buttons = InlineKeyboardMarkup(row_width=1)
     list = BD.makeButtonagentSQL()
     button_list = [InlineKeyboardButton(text=f"{name[1]}",
-                                        callback_data=knopkaAgent.new(agent=name[1])) for name in list]
+                                        callback_data=buttonAgent.new(agent=name[1])) for name in list]
     buttons.add(*button_list)
     return buttons
 
-knopkaFreeBikes = CallbackData('sosiski', 'RegNumber')
+buttonFreeBikes = CallbackData('sosiski', 'RegNumber')
 def makeButtonBikes():
     buttons = InlineKeyboardMarkup(row_width=1)
-    list = BD.checkFreeBikesSQL()
+    free_bikes = BD.checkFreeBikesSQL()
     button_list = [InlineKeyboardButton(text=f"{name[0]}, {name[1]}, {name[2]} LKR",
-                                        callback_data=knopkaFreeBikes.new(RegNumber=name[1])) for name in list]
+                                        callback_data=buttonFreeBikes.new(RegNumber=name[1])) for name in free_bikes]
     buttons.add(*button_list)
     return buttons

@@ -161,6 +161,18 @@ class SQL:
 
     def checkFreeBikesSQL(self):
         """gives out a code with fuel"""
-        self.cursor.execute("SELECT Model, RegNumber, OwnerPrise, OwnerDayPrice  FROM Bikes WHERE Status = ?", ("free",))
-        name = self.cursor.fetchall()
-        return name
+        try:
+            self.cursor.execute("SELECT Model, RegNumber, OwnerPrise, OwnerDayPrice  FROM Bikes WHERE Status = ?", ("free",))
+            name = self.cursor.fetchall()
+            return name
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite", error)
+
+    def giveBikefromSQL(self, reg_num):
+        """gives out a code with fuel"""
+        try:
+            self.cursor.execute("SELECT * FROM Bikes WHERE RegNumber = ?", (reg_num,))
+            bike = self.cursor.fetchone()
+            return bike
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite", error)

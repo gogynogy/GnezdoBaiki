@@ -71,7 +71,7 @@ async def giveQR(call: types.callback_query):
     except:
         await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось")
 
-@dp.callback_query_handler(lambda c: c.data == "somethingNew")  #даёт qr
+@dp.callback_query_handler(lambda c: c.data == "somethingNew")  #создает список пополняемого
 async def giveQRclient(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1).add(
         but.DownloadQR, but.addNewBike, but.addNewOwner)
@@ -97,7 +97,7 @@ async def CourseChoise(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer(f"Оунер байка", reply_markup=but.makeButtonAgent())
 
-@dp.callback_query_handler(but.knopkaAgent.filter())  # adds the account to the table
+@dp.callback_query_handler(but.buttonAgent.filter())  # adds the account to the table
 async def button_hendler(call: types.callback_query, callback_data: dict, state: FSMContext):
     location = callback_data.get('agent')
     await state.update_data(Owner=location)
@@ -170,15 +170,23 @@ async def get_photo_QR(message: types.Message, state: FSMContext):
         await message.answer("QR уже в базе")
     await state.finish()
 
-
-@dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
-async def cancel(message: types.Message, state: FSMContext):
-    await state.finish()
-    await message.answer("Заполнение прекращено")
-
 @dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  #даёт qr
 async def ShowFreeBikes(call: types.callback_query):
     await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes())
+
+@dp.callback_query_handler(but.buttonFreeBikes.filter())  # adds the account to the table
+async def continueReg(call: types.callback_query, callback_data: dict):
+    bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
+    await bot.send_message(call.message.chat.id, f"{bike[1]}\n{bike[2]}\nОунер: {bike[3]}\n"
+                                                 f"Себес в месяц {bike[4]} LKR\nсебес в день {bike[5]} LKR")
+    photo = open(f"{osSiS.DirBikes}/{bike[2]}.jpg", "rb")
+    await bot.send_photo(call.message.chat.id, photo=photo)
+
+@dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
+async def cancel(call: types.callback_query, state: FSMContext):
+    await state.finish()
+    await bot.send_message(call.message.chat.id, "Заполнение прекращено")
+
 
 
 if __name__ == '__main__':
