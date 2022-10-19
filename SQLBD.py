@@ -31,8 +31,7 @@ class SQL:
             OwnerPrise INT,
             OwnerDayPrice INT,
             Profit INT,
-            Status NOT NULL DEFAULT free,
-            PhotoLink TEXT
+            Status NOT NULL DEFAULT free
             )""")
         self.conn.commit()
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS `Owners` (
@@ -61,22 +60,6 @@ class SQL:
                 return False
             else:
                 return True
-        except sqlite3.Error as error:
-            print("Ошибка при работе с SQLite addSQL", error)
-        finally:
-            self.conn.commit()
-
-    def addQRCode(self, message):
-        """checks if the photo exists in the database and adds"""
-        name = message
-        try:
-            self.cursor.execute("SELECT Qrname FROM QRPetrol WHERE Qrname = (?)", (name,))
-            data = self.cursor.fetchone()
-            if data is None:
-                self.cursor.execute(f"INSERT INTO QRPetrol (qrname) VALUES (?)", (name,))
-                return True
-            else:
-                return False
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite addSQL", error)
         finally:
@@ -128,6 +111,22 @@ class SQL:
             self.cursor.execute('''UPDATE accounts SET OstalosL = (OstalosL -4) WHERE IDTelegram = ?''', (id,))
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite changeCountClient", error)
+        finally:
+            self.conn.commit()
+
+    def addQRCode(self, message):
+        """checks if the photo exists in the database and adds"""
+        name = message
+        try:
+            self.cursor.execute("SELECT Qrname FROM QRPetrol WHERE Qrname = (?)", (name,))
+            data = self.cursor.fetchone()
+            if data is None:
+                self.cursor.execute(f"INSERT INTO QRPetrol (qrname) VALUES (?)", (name,))
+                return True
+            else:
+                return False
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite addSQL", error)
         finally:
             self.conn.commit()
 

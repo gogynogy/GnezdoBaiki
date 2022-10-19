@@ -121,16 +121,12 @@ async def get_address(message: types.Message, state: FSMContext):
 @dp.message_handler(state=AddBike.photo, content_types=['photo']) #дописать загрузку фотографий
 async def get_photo(message: types.Message, state: FSMContext):
     await state.update_data(photo=message.photo)
-    # ph = message.photo
-    # await bot.send_photo(message.chat.id, message.photo[-1])
-    name = message.photo[0].file_unique_id + ".jpeg"
-    await message.photo[-1].download(name)
-    await message.answer("QR добавлен в базу")
-
-    #
-    # data = await state.get_data()
-    # BD.addBikeToSQL(data)
-    # await state.finish()
+    data = await state.get_data()
+    BD.addBikeToSQL(data)
+    name = data['RegNumber']
+    await message.photo[-1].download(destination_file=f'{osSiS.DirBikes}/{name}.jpg')
+    await message.answer("байк добавлен в базу")
+    await state.finish()
 
 @dp.callback_query_handler(lambda c: c.data == 'addNewOwner', state=None)  #добавление оунера в базу
 async def continueReg(call: types.callback_query):
@@ -156,13 +152,13 @@ async def continueReg(call: types.callback_query):
     await AddQRPetrol.RegNumber.set()
     await bot.send_message(call.message.chat.id, "Номер байка к которому привязан QR", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает контакт оунера
+@dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает номер байка от которого qr
 async def CourseChoise(message: types.Message, state: FSMContext):
     await state.update_data(RegNumber=message.text.upper())
     await AddQRPetrol.QRFile.set()
     await message.answer(f"Добавить QR", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #дописать загрузку фотографий
+@dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #загружает фотографии QR
 async def get_photo_QR(message: types.Message, state: FSMContext):
     await state.update_data(QRFile=message.photo)
     data = await state.get_data()
