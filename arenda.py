@@ -5,11 +5,14 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils import executor
 import buttons as but
 import ossistem as osSiS
+from timeManager import NulCount
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
 from statemash import AddBike, AddOwner, AddQRPetrol
 
 osSiS.checkDir()
+
+NulCount()
 
 BD = SQL()
 BD.checkDB()
@@ -213,10 +216,11 @@ async def continueReg(call: types.callback_query, callback_data: dict):
     await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=but.WatchBikes(bike[2]))
 
 @dp.callback_query_handler(but.gofromWatchBikes.filter())  #
-async def continueReg(call: types.callback_query, callback_data: dict, message: types.Message):
+async def continueReg(call: types.callback_query, callback_data: dict):
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
     await bot.send_message(call.message.chat.id, "Заявка отправлена модератору")
-    await bot.send_message(id_gosha, f"{message.chat.username} оставил заявку на байк {bike[1]}, {bike[2]}")
+    await bot.send_message(id_gosha, f"{call.message.chat.id} "
+                                     f"оставил заявку на байк {bike[1]}, {bike[2]} себес {bike[4]}")
 
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,
