@@ -25,7 +25,7 @@ async def begin(message: types.Message):
         await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
-        markup.add(but.GiveQRclient)
+        markup.add(but.GiveQRclient, but.makeButtonBikesFC())
         count = BD.howMutchIsTheFishClient(message.chat.id)
         await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?\n"
                              f"до конца недели осталось {count}L", reply_markup=markup)
@@ -51,7 +51,7 @@ async def button_hendler(query: types.CallbackQuery, callback_data: dict):
     await bot.send_message(id_gosha, "Добавлено")
 
 @dp.callback_query_handler(lambda c: c.data == "newWeekStart")
-async def giveQR(call: types.callback_query):
+async def newWeekStart(call: types.callback_query):
     markup = InlineKeyboardMarkup()
     markup.add(but.GiveQR)
     BD.nullCount()

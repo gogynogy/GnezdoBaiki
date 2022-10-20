@@ -8,6 +8,7 @@ newWeekStart = InlineKeyboardButton("Обнулить все QR", callback_data=
 GiveQR = InlineKeyboardButton("Выдать QR", callback_data="GiveQR")
 GiveQRclient = InlineKeyboardButton("Выдать QR", callback_data="GiveQRclient")
 ShowFreeBikes = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikes")
+ShowFreeBikesClient = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikes")
 somethingNew = InlineKeyboardButton("добавить что-то новое", callback_data="somethingNew")
 DownloadQR = InlineKeyboardButton("Загрузить новый QR на топливо", callback_data="DownoadQR")
 addNewBike = InlineKeyboardButton("Добавить новый байк", callback_data="addNewBike")
@@ -42,5 +43,14 @@ def makeButtonBikes():
     free_bikes = BD.checkFreeBikesSQL()
     button_list = [InlineKeyboardButton(text=f"{name[0]}, {name[1]}, {name[2]} LKR",
                                         callback_data=buttonFreeBikes.new(RegNumber=name[1])) for name in free_bikes]
+    buttons.add(*button_list)
+    return buttons
+
+buttonFreeClient = CallbackData('pososiski', 'RegNumber')
+def makeButtonBikesFC():
+    buttons = InlineKeyboardMarkup(row_width=1)
+    free_bikes = BD.checkFreeBikesSQL()
+    button_list = [InlineKeyboardButton(
+        text=f"{name[0]}", callback_data=buttonFreeBikes.new(RegNumber=name[1])) for name in free_bikes]
     buttons.add(*button_list)
     return buttons
