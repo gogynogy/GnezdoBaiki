@@ -5,14 +5,11 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils import executor
 import buttons as but
 import ossistem as osSiS
-from timeManager import NulCount
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
-from statemash import AddBike, AddOwner, AddQRPetrol
+from statemash import AddBike, AddOwner, AddQRPetrol, AddBookingBike
 
 osSiS.checkDir()
-
-NulCount()
 
 BD = SQL()
 BD.checkDB()
@@ -24,7 +21,7 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 async def begin(message: types.Message):
     markup = InlineKeyboardMarkup(row_width=1)
     if message.chat.id in id_dopusk:
-        markup.add(but.newWeekStart, but.GiveQR, but.ShowFreeBikes, but.somethingNew)
+        markup.add(but.newWeekStart, but.GiveQR, but.BikesMenu, but.somethingNew)
         await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
@@ -48,13 +45,12 @@ async def begin(message: types.Message):
 async def begin(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1)
     if call.message.chat.id in id_dopusk:
-        markup.add(but.newWeekStart, but.GiveQR, but.ShowFreeBikes, but.somethingNew)
+        markup.add(but.newWeekStart, but.GiveQR, but.BikesMenu, but.somethingNew)
         await bot.send_message(call.message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
         await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     else:
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
         await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
-
 
 @dp.callback_query_handler(but.cb.filter())  # adds the account to the table
 async def button_hendler(query: types.CallbackQuery, callback_data: dict):
@@ -74,12 +70,24 @@ async def newWeekStart(call: types.callback_query):
 
 @dp.callback_query_handler(lambda c: c.data == "GiveQR")  #даёт qr
 async def giveQR(call: types.callback_query):
-    markup = InlineKeyboardMarkup()
-    markup.add(but.sushi, but.Kosiak)
+    markup = InlineKeyboardMarkup().add(but.sushi, but.Kosiak)
     try:
         global name
         name = BD.giveFreshQR()
-        photo = open(f"{name}", "rb")
+        photo = open(f"{osSiS.DirQR}/{name}.jpg", "rb")
+        BD.changeCount('0', name)
+        await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
+        await bot.answer_callback_query(call.id)
+    except:
+        await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось")
+
+@dp.callback_query_handler(lambda c: c.data == "GiveQRclient")  #даёт qr
+async def giveQRclient(call: types.callback_query):
+    markup = InlineKeyboardMarkup().add(but.sushi, but.Kosiak)
+    try:
+        global name
+        name = BD.giveFreshQR()
+        photo = open(f"{osSiS.DirQR}/{name}.jpg", "rb")
         BD.changeCount('0', name)
         await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
         await bot.answer_callback_query(call.id)
@@ -87,7 +95,7 @@ async def giveQR(call: types.callback_query):
         await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось")
 
 @dp.callback_query_handler(lambda c: c.data == "somethingNew")  #создает список пополняемого
-async def giveQRclient(call: types.callback_query):
+async def somethingNew(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1).add(
         but.DownloadQR, but.addNewBike, but.addNewOwner)
     await bot.send_message(call.message.chat.id, "что же нового появилось?", reply_markup=markup)
@@ -104,7 +112,7 @@ async def ShowNotFullReg(message: types.Message, state: FSMContext):
     await message.answer("Регистрационный номер байка", reply_markup=but.cancelOperation())
 
 @dp.message_handler(state=AddBike.RegNumber)  #запрашивает оунера
-async def CourseChoise(message: types.Message, state: FSMContext):
+async def OwnerChoise(message: types.Message, state: FSMContext):
     await state.update_data(RegNumber=message.text.upper())
     global NewBike
     data = await state.get_data()
@@ -114,8 +122,8 @@ async def CourseChoise(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(but.buttonAgent.filter())  # adds the account to the table
 async def button_hendler(call: types.callback_query, callback_data: dict, state: FSMContext):
-    location = callback_data.get('agent')
-    await state.update_data(Owner=location)
+    agent = callback_data.get('agent')
+    await state.update_data(Owner=agent)
     await AddBike.OwnerPrise.set()
     await bot.send_message(call.message.chat.id, f"Стоимость байка", reply_markup=but.cancelOperation())
 
@@ -185,17 +193,45 @@ async def get_photo_QR(message: types.Message, state: FSMContext):
         await message.answer("QR уже в базе")
     await state.finish()
 
-@dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  #даёт qr
+@dp.callback_query_handler(lambda c: c.data == "BikesMenu")  #даёт qr
+async def BikesMenu(call: types.callback_query):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.ShowRentBikes, but.ShowFreeBikes, but.home)
+    await bot.send_message(call.message.chat.id, "BikesMenu", reply_markup=markup)
+
+@dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  # show free bikes
 async def ShowFreeBikes(call: types.callback_query):
     await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes())
 
 @dp.callback_query_handler(but.buttonFreeBikes.filter())  # adds the account to the table
 async def continueReg(call: types.callback_query, callback_data: dict):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.BookingBike, but.ShowFreeBikes, but.home)
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
     await bot.send_message(call.message.chat.id, f"{bike[1]}\n{bike[2]}\nОунер: {bike[3]}\n"
-                                                 f"Себес в месяц {bike[4]} LKR\nсебес в день {bike[5]} LKR")
+                                                 f"Себес в месяц {bike[4]} LKR\nСебес в день {bike[5]} LKR")
     photo = open(f"{osSiS.DirBikes}/{bike[2]}.jpg", "rb")
-    await bot.send_photo(call.message.chat.id, photo=photo)
+    await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
+@dp.callback_query_handler(lambda c: c.data == 'BookingBike', state=None)  #добавление QR в базу
+async def BookingBike(call: types.callback_query):
+    await AddBookingBike.RegNumber.set()
+    await bot.send_message(call.message.chat.id, "Номер байка к которому привязан QR", reply_markup=but.cancelOperation())
+
+@dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает номер байка от которого qr
+async def CourseChoise(message: types.Message, state: FSMContext):
+    await state.update_data(RegNumber=message.text.upper())
+    await AddQRPetrol.QRFile.set()
+    await message.answer(f"Добавить QR", reply_markup=but.cancelOperation())
+
+@dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #загружает фотографии QR
+async def get_photo_QR(message: types.Message, state: FSMContext):
+    await state.update_data(QRFile=message.photo)
+    data = await state.get_data()
+    name = data["RegNumber"]
+    if BD.addQRCode(name):
+        await message.photo[-1].download(destination_file=f'{osSiS.DirQR}/{name}.jpg')
+        await message.answer("QR добавлен в базу")
+    else:
+        await message.answer("QR уже в базе")
+    await state.finish()
 
 @dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
 async def cancel(call: types.callback_query, state: FSMContext):

@@ -3,20 +3,28 @@ from aiogram.utils.callback_data import CallbackData
 from SQLBD import SQL
 
 BD = SQL()
-
+#QR
 newWeekStart = InlineKeyboardButton("Обнулить все QR", callback_data="newWeekStart")
 GiveQR = InlineKeyboardButton("Выдать QR", callback_data="GiveQR")
 GiveQRclient = InlineKeyboardButton("Выдать QR", callback_data="GiveQRclient")
-ShowFreeBikes = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikes")
-ShowFreeBikesClient = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikesClient")
-somethingNew = InlineKeyboardButton("добавить что-то новое", callback_data="somethingNew")
 DownloadQR = InlineKeyboardButton("Загрузить новый QR на топливо", callback_data="DownoadQR")
-addNewBike = InlineKeyboardButton("Добавить новый байк", callback_data="addNewBike")
-addNewOwner = InlineKeyboardButton("Добавить нового оунера", callback_data="addNewOwner")
 sushi = InlineKeyboardButton("Заправился, спасибо)", callback_data="sushi")
 Kosiak = InlineKeyboardButton("QR не работает", callback_data="Kosiak")
-cancel = InlineKeyboardButton(f'Отменить заполнение', callback_data="cancel")
 
+#Bikes
+BikesMenu = InlineKeyboardButton("bikes", callback_data="BikesMenu")
+ShowFreeBikes = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikes")
+ShowFreeBikesClient = InlineKeyboardButton("Посмотреть доступные байки", callback_data="ShowFreeBikesClient")
+ShowRentBikes = InlineKeyboardButton("ShowRentBikes", callback_data="ShowRentBikes")
+addNewBike = InlineKeyboardButton("Добавить новый байк", callback_data="addNewBike")
+BookingBike = InlineKeyboardButton("BookingBike", callback_data="BookingBike")
+
+#Owners
+somethingNew = InlineKeyboardButton("добавить что-то новое", callback_data="somethingNew")
+addNewOwner = InlineKeyboardButton("Добавить нового оунера", callback_data="addNewOwner")
+
+#Menu
+cancel = InlineKeyboardButton(f'Отменить заполнение', callback_data="cancel")
 home = InlineKeyboardButton(f"Главное меню", callback_data="start")
 
 def cancelOperation():
@@ -47,6 +55,7 @@ def makeButtonBikes():
     button_list = [InlineKeyboardButton(text=f"{name[0]}, {name[1]}, {name[2]} LKR",
                                         callback_data=buttonFreeBikes.new(RegNumber=name[1])) for name in free_bikes]
     buttons.add(*button_list)
+
     return buttons
 
 buttonFreeClient = CallbackData('pososiski', 'RegNumber')

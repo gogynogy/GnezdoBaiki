@@ -15,3 +15,9 @@ class AddOwner(StatesGroup):
 class AddQRPetrol(StatesGroup):
     RegNumber = State()
     QRFile = State()
+
+class AddBookingBike(StatesGroup):
+    RegNumber = State()
+    Owner = State()
+    OwnerPrise = State()
+    photo = State()

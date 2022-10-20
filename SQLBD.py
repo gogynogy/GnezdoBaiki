@@ -30,6 +30,7 @@ class SQL:
             Owner TEXT,
             OwnerPrise INT,
             OwnerDayPrice INT,
+            RentStart TEXT,
             Profit INT,
             Status NOT NULL DEFAULT free
             )""")
@@ -91,7 +92,7 @@ class SQL:
 
     def changeCount(self, num, id):  # changes the amount of fuel in the remainder
         try:
-            self.cursor.execute('''UPDATE QRPetrol SET kolichestvo = ? WHERE qrname = ?''', (num, id))
+            self.cursor.execute('''UPDATE QRPetrol SET kolichestvo = ? WHERE Qrname = ?''', (num, id))
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite changeCount", error)
         finally:
@@ -108,9 +109,15 @@ class SQL:
 
     def giveFreshQR(self):
         """gives out a code with fuel"""
-        self.cursor.execute("SELECT qrname FROM QRPetrol WHERE kolichestvo = ?", ("4",))
-        name = self.cursor.fetchone()
-        return name[0]
+        try:
+            self.cursor.execute("SELECT Qrname FROM QRPetrol WHERE kolichestvo = ?", ("4",))
+            name = self.cursor.fetchone()
+            print(name[0])
+            return name[0]
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite changeCountClient", error)
+        finally:
+            self.conn.commit()
 
     def changeCountClient(self, id):
         """changes the amount of fuel on the client's balance"""
