@@ -25,7 +25,7 @@ async def begin(message: types.Message):
         await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
-        markup.add(but.GiveQRclient, but.makeButtonBikesFC())
+        markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
         count = BD.howMutchIsTheFishClient(message.chat.id)
         await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?\n"
                              f"до конца недели осталось {count}L", reply_markup=markup)
@@ -40,6 +40,18 @@ async def begin(message: types.Message):
             await bot.send_message(id_gosha, f"Кто-то {message.chat.username} хочет топлива\n"
                                              f"Вот его ID {message.chat.id}", reply_markup=but.knopkaADDAccount
             (message.chat.id, message.chat.username))
+
+@dp.callback_query_handler(lambda c: c.data == "start")  # /start command processing
+async def begin(call: types.callback_query):
+    markup = InlineKeyboardMarkup(row_width=1)
+    if call.message.chat.id in id_dopusk:
+        markup.add(but.newWeekStart, but.GiveQR, but.ShowFreeBikes, but.somethingNew)
+        await bot.send_message(call.message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
+        await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
+    else:
+        markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
+        await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
+
 
 @dp.callback_query_handler(but.cb.filter())  # adds the account to the table
 async def button_hendler(query: types.CallbackQuery, callback_data: dict):
@@ -187,7 +199,24 @@ async def cancel(call: types.callback_query, state: FSMContext):
     await state.finish()
     await bot.send_message(call.message.chat.id, "Заполнение прекращено")
 
+"""client"""
+@dp.callback_query_handler(lambda c: c.data == "ShowFreeBikesClient")
+async def ShowFreeBikesClient(call: types.callback_query):
+    await bot.send_message(call.message.chat.id, "На данный момент есть свободные байки",
+                           reply_markup=but.makeButtonBikesFC())
 
+@dp.callback_query_handler(but.buttonFreeClient.filter())  #
+async def continueReg(call: types.callback_query, callback_data: dict):
+    bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
+    await bot.send_message(call.message.chat.id, f"{bike[1]}\n{bike[2]}")
+    photo = open(f"{osSiS.DirBikes}/{bike[2]}.jpg", "rb")
+    await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=but.WatchBikes(bike[2]))
+
+@dp.callback_query_handler(but.gofromWatchBikes.filter())  #
+async def continueReg(call: types.callback_query, callback_data: dict, message: types.Message):
+    bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
+    await bot.send_message(call.message.chat.id, "Заявка отправлена модератору")
+    await bot.send_message(id_gosha, f"{message.chat.username} оставил заявку на байк {bike[1]}, {bike[2]}")
 
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,

@@ -40,6 +40,13 @@ class SQL:
             contact TEXT
             )""")
         self.conn.commit()
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS `History` (
+                    bike TEXT,
+                    customer TEXT,
+                    dateStart TEXT,
+                    dateFinish TEXT
+                    )""")
+        self.conn.commit()
 
     def howMutchIsTheFish(self):
         """counts the fuel balance"""
