@@ -204,7 +204,7 @@ async def BikesMenu(call: types.callback_query):
 async def ShowFreeBikes(call: types.callback_query):
     await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes())
 
-@dp.callback_query_handler(but.buttonFreeBikes.filter())  # adds the account to the table
+@dp.callback_query_handler(but.buttonFreeBikes.filter())  # show chosen Bike
 async def continueReg(call: types.callback_query, callback_data: dict):
     markup = InlineKeyboardMarkup(row_width=1).add(but.BookingBike, but.ShowFreeBikes, but.home)
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
@@ -212,12 +212,12 @@ async def continueReg(call: types.callback_query, callback_data: dict):
                                                  f"Себес в месяц {bike[4]} LKR\nСебес в день {bike[5]} LKR")
     photo = open(f"{osSiS.DirBikes}/{bike[2]}.jpg", "rb")
     await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
-@dp.callback_query_handler(lambda c: c.data == 'BookingBike', state=None)  #добавление QR в базу
+@dp.callback_query_handler(lambda c: c.data == 'BookingBike', state=None)  #
 async def BookingBike(call: types.callback_query):
     await AddBookingBike.RegNumber.set()
-    await bot.send_message(call.message.chat.id, "Номер байка к которому привязан QR", reply_markup=but.cancelOperation())
+    await bot.send_message(call.message.chat.id, " ", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddQRPetrol.RegNumber)  #запрашивает номер байка от которого qr
+@dp.message_handler(state=AddQRPetrol.RegNumber)  #
 async def CourseChoise(message: types.Message, state: FSMContext):
     await state.update_data(RegNumber=message.text.upper())
     await AddQRPetrol.QRFile.set()
