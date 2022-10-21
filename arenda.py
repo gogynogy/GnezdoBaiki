@@ -50,6 +50,8 @@ async def begin(call: types.callback_query):
         await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     else:
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
+        if BD.checkClientLicense(call.message.chat.id):
+            markup.add(but.addlicense)
         await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
 
 @dp.callback_query_handler(but.cb.filter())  # adds the account to the table

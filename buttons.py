@@ -22,6 +22,7 @@ BookingBike = InlineKeyboardButton("BookingBike", callback_data="BookingBike")
 #Owners
 somethingNew = InlineKeyboardButton("добавить что-то новое", callback_data="somethingNew")
 addNewOwner = InlineKeyboardButton("Добавить нового оунера", callback_data="addNewOwner")
+addlicense = InlineKeyboardButton("addlicense", callback_data="addlicense")
 
 #Menu
 cancel = InlineKeyboardButton(f'Отменить заполнение', callback_data="cancel")
@@ -75,3 +76,6 @@ def WatchBikes(regNum):
                    InlineKeyboardButton("Main menu", callback_data="start")]
     buttons.add(*button_list)
     return buttons
+
+def WatchClients():
+    buttons = InlineKeyboardMarkup(row_width=1)

@@ -20,7 +20,7 @@ class SQL:
             TelegramNikName TEXT,
             IDTelegram TEXT,
             Prava TEXT NOT NULL DEFAULT no,
-            OstalosL int NOT NULL DEFAULT 8
+            NumRentBike TEXT NOT NULL DEFAULT NO
             )""")
         self.conn.commit()
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS `Bikes` (
@@ -188,5 +188,16 @@ class SQL:
             self.cursor.execute("SELECT * FROM Bikes WHERE RegNumber = ?", (reg_num,))
             bike = self.cursor.fetchone()
             return bike
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite", error)
+
+    def checkClientLicense(self, id):
+        """check drive license"""
+        try:
+            self.cursor.execute("SELECT Prava FROM accounts WHERE IDTelegram = ?", (id,))
+            if self.cursor.fetchone()[0] == "no":
+                return True
+            else:
+                return False
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite", error)
