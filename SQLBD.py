@@ -112,7 +112,6 @@ class SQL:
         try:
             self.cursor.execute("SELECT Qrname FROM QRPetrol WHERE kolichestvo = ?", ("4",))
             name = self.cursor.fetchone()
-            print(name[0])
             return name[0]
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite changeCountClient", error)
@@ -199,5 +198,13 @@ class SQL:
                 return True
             else:
                 return False
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite", error)
+
+    def giveClientList(self):
+        """check drive license"""
+        try:
+            self.cursor.execute("SELECT * FROM accounts")
+            return self.cursor.fetchall()
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite", error)

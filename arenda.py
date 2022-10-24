@@ -7,6 +7,7 @@ import buttons as but
 import ossistem as osSiS
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
+from dateTime import GetFinishRentDate
 from statemash import AddBike, AddOwner, AddQRPetrol, AddBookingBike
 
 osSiS.checkDir()
@@ -195,7 +196,7 @@ async def get_photo_QR(message: types.Message, state: FSMContext):
         await message.answer("QR уже в базе")
     await state.finish()
 
-@dp.callback_query_handler(lambda c: c.data == "BikesMenu")  #даёт qr
+@dp.callback_query_handler(lambda c: c.data == "BikesMenu")  #открывает меню по байкам для админа
 async def BikesMenu(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1).add(but.ShowRentBikes, but.ShowFreeBikes, but.home)
     await bot.send_message(call.message.chat.id, "BikesMenu", reply_markup=markup)
@@ -206,39 +207,39 @@ async def ShowFreeBikes(call: types.callback_query):
 
 @dp.callback_query_handler(but.buttonFreeBikes.filter())  # show chosen Bike
 async def continueReg(call: types.callback_query, callback_data: dict):
-    markup = InlineKeyboardMarkup(row_width=1).add(but.BookingBike, but.ShowFreeBikes, but.home)
+    markup = InlineKeyboardMarkup(row_width=1).add(but.BookingBike(callback_data.get('RegNumber')), but.ShowFreeBikes, but.home)
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
     await bot.send_message(call.message.chat.id, f"{bike[1]}\n{bike[2]}\nОунер: {bike[3]}\n"
                                                  f"Себес в месяц {bike[4]} LKR\nСебес в день {bike[5]} LKR")
     photo = open(f"{osSiS.DirBikes}/{bike[2]}.jpg", "rb")
     await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
-@dp.callback_query_handler(lambda c: c.data == 'BookingBike', state=None)  #
-async def BookingBike(call: types.callback_query):
-    await AddBookingBike.RegNumber.set()
-    await bot.send_message(call.message.chat.id, " ", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddQRPetrol.RegNumber)  #
+"""BookingBike"""
+
+@dp.callback_query_handler(but.BikeRegNum.filter(), state=None)  #
+async def BookingBike(call: types.callback_query, callback_data: dict, state: FSMContext):
+    await state.update_data(Client=callback_data.get('RegNum'))
+    await AddBookingBike.Client.set()
+    await bot.send_message(call.message.chat.id, "WHO?", reply_markup=but.ButtonsClients())
+
+@dp.message_handler(state=AddBookingBike.Client)  #
 async def CourseChoise(message: types.Message, state: FSMContext):
-    await state.update_data(RegNumber=message.text.upper())
-    await AddQRPetrol.QRFile.set()
-    await message.answer(f"Добавить QR", reply_markup=but.cancelOperation())
+    await state.update_data(Client=message.text)
+    await AddBookingBike.Money.set()
+    await message.answer(f"how much?", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddQRPetrol.QRFile, content_types=['photo']) #загружает фотографии QR
+@dp.message_handler(state=AddBookingBike.Money)  #
+async def CourseChoise(message: types.Message, state: FSMContext):
+    await state.update_data(Money=message.text)
+    await AddBookingBike.HowLong.set()
+    await message.answer(f"how long?", reply_markup=but.cancelOperation())
+
+@dp.message_handler(state=AddBookingBike.HowLong) #загружает фотографии QR
 async def get_photo_QR(message: types.Message, state: FSMContext):
-    await state.update_data(QRFile=message.photo)
+    await state.update_data(HowLong=message.text)
     data = await state.get_data()
-    name = data["RegNumber"]
-    if BD.addQRCode(name):
-        await message.photo[-1].download(destination_file=f'{osSiS.DirQR}/{name}.jpg')
-        await message.answer("QR добавлен в базу")
-    else:
-        await message.answer("QR уже в базе")
+    GetFinishRentDate(data["HowLong"])
     await state.finish()
-
-@dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
-async def cancel(call: types.callback_query, state: FSMContext):
-    await state.finish()
-    await bot.send_message(call.message.chat.id, "Заполнение прекращено")
 
 """client"""
 @dp.callback_query_handler(lambda c: c.data == "ShowFreeBikesClient")
@@ -260,7 +261,12 @@ async def continueReg(call: types.callback_query, callback_data: dict):
     await bot.send_message(id_gosha, f"{call.message.chat.id} "
                                      f"оставил заявку на байк {bike[1]}, {bike[2]} себес {bike[4]}")
 
+"""all"""
+@dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
+async def cancel(call: types.callback_query, state: FSMContext):
+    await state.finish()
+    await bot.send_message(call.message.chat.id, "Заполнение прекращено")
+
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,
                            skip_updates=True)
-

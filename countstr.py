@@ -16,7 +16,6 @@ if __name__ == '__main__':
     directory = os.getcwd()
     files = list(gen_files_dir(directory))
     line_count = 0
-
     for file_dir in files:
         if not os.path.isfile(file_dir):
             continue
