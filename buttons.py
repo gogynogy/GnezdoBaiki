@@ -68,7 +68,7 @@ buttonFreeClient = CallbackData('pososiski', 'RegNumber')
 def makeButtonBikesFC():
     buttons = InlineKeyboardMarkup(row_width=1)
     button_list = [InlineKeyboardButton(text=f"{name[0]}", callback_data=buttonFreeClient.new(RegNumber=name[1]))
-                   for name in BD.checkBikesSQL()]
+                   for name in BD.checkBikesSQL('free')]
     return buttons.add(*button_list)
 
 gofromWatchBikes = CallbackData('kiski', 'RegNumber')
@@ -87,5 +87,5 @@ def ButtonsClients():
 
 def ButtonsFreeBikes():
     buttons = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True)
-    button_list = [(name[1]) for name in BD.checkBikesSQL()]
+    button_list = [(name[1]) for name in BD.checkBikesSQL('free')]
     return buttons.add(*button_list)

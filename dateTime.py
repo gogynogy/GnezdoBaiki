@@ -11,7 +11,7 @@ days = monthrange(year, month)[1]
 
 
 def GetFinishRentDate(count):
-    return str(date.today() + timedelta(days=count))
+    return date.today() + timedelta(days=int(count))
 
 def GetToodayDate():
     return date.today()

@@ -32,16 +32,10 @@ async def begin(message: types.Message):
         await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?\n"
                              f"до конца недели осталось {count}L", reply_markup=markup)
     else:
-        if message.chat.username == None:
-            await bot.send_message(message.chat.id, f"доброе утро\nА потом мопед заправим.")
-            await bot.send_message(id_gosha, f"Кто-то {message.chat.first_name} хочет топлива\n"
-                                             f"Вот его ID {message.chat.id}", reply_markup=but.knopkaADDAccount
-            (message.chat.id, message.chat.first_name))
-        else:
-            markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
-            if BD.checkClientLicense(message.chat.id):
-                markup.add(but.addlicense)
-            await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
+        await bot.send_message(message.chat.id, f"Заявка отправлена модератору, ожидай.")
+        await bot.send_message(id_gosha, f"Кто-то {message.chat.first_name} хочет топлива\n"
+                                         f"Вот его ID {message.chat.id}", reply_markup=but.knopkaADDAccount
+        (message.chat.id, message.chat.first_name))
 
 @dp.callback_query_handler(lambda c: c.data == "start")  # /start command processing
 async def begin(call: types.callback_query):
@@ -51,11 +45,16 @@ async def begin(call: types.callback_query):
         await bot.send_message(call.message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkBikesSQL('free'))}"
                                                 f"\nвсего байков: {len(BD.checkallBikesSQL())}")
         await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
-    else:
+    elif BD.CheckAccount(call.message):
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
-        if BD.checkClientLicense(call.message.chat.id):
-            markup.add(but.addlicense)
-        await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
+        count = BD.howMutchIsTheFishClient(call.message.chat.id)
+        await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?\n"
+                             f"до конца недели осталось {count}L", reply_markup=markup)
+    else:
+        await bot.send_message(call.message.chat.id, f"Заявка отправлена модератору, ожидай.")
+        await bot.send_message(id_gosha, f"Кто-то {call.message.chat.first_name} хочет топлива\n"
+                                         f"Вот его ID {call.message.chat.id}", reply_markup=but.knopkaADDAccount
+        (call.message.chat.id, call.message.chat.first_name))
 
 @dp.callback_query_handler(but.cb.filter())  # adds the account to the table
 async def button_hendler(query: types.CallbackQuery, callback_data: dict):
@@ -172,10 +171,11 @@ async def CourseChoise(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=AddOwner.contact)  #сообщает о сохранении оунера
 async def CourseChoise(message: types.Message, state: FSMContext):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.ShowFreeBikes, but.home)
     await state.update_data(contact=message.text)
     data = await state.get_data()
     BD.addOwnerToSQL(data)
-    await message.answer(f"Oунер сохранен")
+    await message.answer(f"Oунер сохранен", reply_markup=markup)
     await state.finish()
 
 """add QR to Base"""
@@ -235,7 +235,7 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 async def StopBookingBike(call: types.callback_query, callback_data: dict):
     markup = InlineKeyboardMarkup(row_width=1).add(but.home, but.BikesMenu)
     BD.changeStatusBike(callback_data.get('RegNum'), "free")
-    daysCount = BD.calculateRent(callback_data.get('RegNumber'))
+    daysCount = BD.calculateRent(callback_data.get('RegNum'))
     await bot.send_message(call.message.chat.id, "Аренда байка остановлена", reply_markup=markup)
 
 @dp.callback_query_handler(but.BikeStartRent.filter(), state=None)  #
@@ -254,7 +254,7 @@ async def CourseChoise(message: types.Message, state: FSMContext):
 async def CourseChoise(message: types.Message, state: FSMContext):
     await state.update_data(Money=message.text)
     data = await state.get_data()
-    if int(message.text) + int(message.text) * 0.2 < int(BD.giveBikefromSQL(data['RegNumber'])[5]):
+    if int(message.text) * 1.2 < int(BD.giveBikefromSQL(data['RegNumber'])[5]):
         await message.answer("работаем в минус!!!!!")
     await state.update_data(OwnerPrice=BD.giveBikefromSQL(data['RegNumber'])[5])
     await AddBookingBike.HowLong.set()

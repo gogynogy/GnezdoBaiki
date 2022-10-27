@@ -36,7 +36,8 @@ class SQL:
             OwnerDayPrice INT,
             OwnerRentStart TEXT,
             Profit INT NOT NULL DEFAULT 0,
-            Status NOT NULL DEFAULT free
+            Status NOT NULL DEFAULT free,
+            curentRentFinish TEXT
             )""")
         self.conn.commit()
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS `Owners` (
@@ -46,11 +47,15 @@ class SQL:
             )""")
         self.conn.commit()
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS `History` (
-                    bike TEXT,
-                    customer TEXT,
-                    dateStart TEXT,
-                    dateFinish TEXT
-                    )""")
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bike TEXT,
+            customer TEXT,
+            dateStart TEXT,
+            dateFinish TEXT,
+            moneyPerDay TEXT,
+            daysCount TEXT,
+            moneyTotal TEXT
+            )""")
         self.conn.commit()
 
     def howMutchIsTheFish(self):
@@ -232,32 +237,34 @@ class SQL:
             self.conn.commit()
 
     def giveBikeRent(self, data):
-        client = data["Client"]
-        regNumber = data["RegNumber"]
-        money = data["Money"]
-        howLong = data["HowLong"]
-        profit = (int(money) - int(data["OwnerPrice"])) * int(howLong)
+        profit = (int(data["Money"]) - int(data["OwnerPrice"])) * int(data["HowLong"])
         today = str(GetToodayDate())
-        stopRent = str(GetFinishRentDate(howLong))
+        stopRent = str(GetFinishRentDate(data["HowLong"]))
+        totalMoney = int(data["Money"]) * int(data["HowLong"])
         try:
-            self.cursor.execute('''UPDATE Bikes SET Status = ? WHERE RegNumber = ?''',
-                                ("rent", regNumber))
-            self.cursor.execute('''UPDATE Bikes SET Profit = (Profit + ?) WHERE RegNumber = ?''', (int(profit), regNumber))
-            self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish) VALUES (?, ?, ?, ?)''',
-                                (regNumber, client, today, stopRent))
+            self.cursor.execute('''UPDATE accounts SET NumRentBike = ? WHERE TelegramNikName = ?''',
+                                (data["RegNumber"], data["Client"]))
+            self.cursor.execute('''UPDATE Bikes SET (Status, curentRentFinish) = (?, ?) WHERE RegNumber = ?''',
+                                ("rent", stopRent, data["RegNumber"]))
+            self.cursor.execute('''UPDATE Bikes SET Profit = (Profit + ?) WHERE RegNumber = ?''',
+                                (int(profit), data["RegNumber"]))
+            self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish, moneyPerDay, daysCount, 
+                                moneyTotal) VALUES (?, ?, ?, ?, ?, ?, ?)''', (data["RegNumber"], data["Client"], today,
+                                stopRent, data["Money"], data["HowLong"], totalMoney))
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite giveBikeRent", error)
         finally:
             self.conn.commit()
 
-    # def calculateRent(self, BikeNum):
-    #     try:
-    #         self.cursor.execute('''UPDATE Bikes SET Status = ? WHERE RegNumber = ?''',
-    #                             ("rent", regNumber))
-    #         self.cursor.execute('''UPDATE Bikes SET Profit = (Profit + ?) WHERE RegNumber = ?''', (int(profit), regNumber))
-    #         self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish) VALUES (?, ?, ?, ?)''',
-    #                             (regNumber, client, today, stopRent))
-    #     except sqlite3.Error as error:
-    #         print("Ошибка при работе с SQLite giveBikeRent", error)
-    #     finally:
-    #         self.conn.commit()
+    def calculateRent(self, regNumber):
+        today = str(GetToodayDate())
+        print(regNumber)
+        try:
+            print(self.giveBikefromSQL(regNumber))
+            # self.cursor.execute('''UPDATE Bikes SET Profit = (Profit + ?) WHERE RegNumber = ?''', (int(profit), regNumber))
+            # self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish) VALUES (?, ?, ?, ?)''',
+            #                     (regNumber, client, today, stopRent))
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite giveBikeRent", error)
+        finally:
+            self.conn.commit()
