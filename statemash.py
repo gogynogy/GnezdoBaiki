@@ -21,3 +21,4 @@ class AddBookingBike(StatesGroup):
     RegNumber = State()
     Money = State()
     HowLong = State()
+    OwnerPrice = State()

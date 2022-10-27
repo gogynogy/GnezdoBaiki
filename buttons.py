@@ -20,16 +20,21 @@ ShowRentBikes = InlineKeyboardButton("ShowRentBikes", callback_data="ShowRentBik
 addNewBike = InlineKeyboardButton("Добавить новый байк", callback_data="addNewBike")
 buttonFreeBikes = CallbackData('sosiski', 'RegNumber')
 
-def makeButtonBikes():
+def makeButtonBikes(status):
     buttons = InlineKeyboardMarkup(row_width=1)
     button_list = [InlineKeyboardButton(text=f"{name[0]}, {name[1]}, {name[2]} LKR",
                                         callback_data=buttonFreeBikes.new(RegNumber=name[1]))
-                                        for name in BD.checkFreeBikesSQL()]
+                   for name in BD.checkBikesSQL(status)]
     return buttons.add(*button_list)
-BikeRegNum = CallbackData('action', 'RegNum')
+BikeStartRent = CallbackData('action', 'RegNum')
 
 def BookingBike(RegNum):
-    return InlineKeyboardButton(f"BookingBike {RegNum}", callback_data=BikeRegNum.new(RegNum=RegNum))
+    return InlineKeyboardButton(f"BookingBike {RegNum}", callback_data=BikeStartRent.new(RegNum=RegNum))
+
+BikeStopRent = CallbackData('auction', 'RegNum')
+
+def StopBookingBike(RegNum):
+    return InlineKeyboardButton(f"StopBookingBike {RegNum}", callback_data=BikeStopRent.new(RegNum=RegNum))
 
 #Owners
 somethingNew = InlineKeyboardButton("добавить что-то новое", callback_data="somethingNew")
@@ -59,13 +64,11 @@ def makeButtonAgent():
                                         for name in BD.makeButtonagentSQL()]
     return buttons.add(*button_list)
 
-
-
 buttonFreeClient = CallbackData('pososiski', 'RegNumber')
 def makeButtonBikesFC():
     buttons = InlineKeyboardMarkup(row_width=1)
     button_list = [InlineKeyboardButton(text=f"{name[0]}", callback_data=buttonFreeClient.new(RegNumber=name[1]))
-                                        for name in BD.checkFreeBikesSQL()]
+                   for name in BD.checkBikesSQL()]
     return buttons.add(*button_list)
 
 gofromWatchBikes = CallbackData('kiski', 'RegNumber')
@@ -77,9 +80,6 @@ def WatchBikes(regNum):
     buttons.add(*button_list)
     return buttons
 
-bikeStatus = CallbackData('action', 'status')
-
-
 def ButtonsClients():
     buttons = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True)
     button_list = [(name[1]) for name in BD.giveClientList()]
@@ -87,5 +87,5 @@ def ButtonsClients():
 
 def ButtonsFreeBikes():
     buttons = ReplyKeyboardMarkup(row_width=1, one_time_keyboard=True)
-    button_list = [(name[1]) for name in BD.checkFreeBikesSQL()]
+    button_list = [(name[1]) for name in BD.checkBikesSQL()]
     return buttons.add(*button_list)

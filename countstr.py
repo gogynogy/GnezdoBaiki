@@ -35,6 +35,7 @@ if __name__ == '__main__':
                             "#"):  # Откидываем пустые строки и комментарии <--- ТУТ НЕ РАБОТАЕТ
                         local_count += 1
                 line_count += local_count
+
                 file.close()
             except:
                 continue

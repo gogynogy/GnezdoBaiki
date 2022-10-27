@@ -23,7 +23,8 @@ async def begin(message: types.Message):
     markup = InlineKeyboardMarkup(row_width=1)
     if message.chat.id in id_dopusk:
         markup.add(but.newWeekStart, but.GiveQR, but.BikesMenu, but.somethingNew)
-        await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
+        await bot.send_message(message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkBikesSQL('free'))}"
+                                                f"\nвсего байков: {len(BD.checkallBikesSQL())}")
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
@@ -37,17 +38,18 @@ async def begin(message: types.Message):
                                              f"Вот его ID {message.chat.id}", reply_markup=but.knopkaADDAccount
             (message.chat.id, message.chat.first_name))
         else:
-            await bot.send_message(message.chat.id, f"доброе утро\nА потом мопед заправим.")
-            await bot.send_message(id_gosha, f"Кто-то {message.chat.username} хочет топлива\n"
-                                             f"Вот его ID {message.chat.id}", reply_markup=but.knopkaADDAccount
-            (message.chat.id, message.chat.username))
+            markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
+            if BD.checkClientLicense(message.chat.id):
+                markup.add(but.addlicense)
+            await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?", reply_markup=markup)
 
 @dp.callback_query_handler(lambda c: c.data == "start")  # /start command processing
 async def begin(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1)
     if call.message.chat.id in id_dopusk:
         markup.add(but.newWeekStart, but.GiveQR, but.BikesMenu, but.somethingNew)
-        await bot.send_message(call.message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkFreeBikesSQL())}")
+        await bot.send_message(call.message.chat.id, f"На данный момент есть свободных байков: {len(BD.checkBikesSQL('free'))}"
+                                                f"\nвсего байков: {len(BD.checkallBikesSQL())}")
         await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     else:
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
@@ -103,6 +105,7 @@ async def somethingNew(call: types.callback_query):
         but.DownloadQR, but.addNewBike, but.addNewOwner)
     await bot.send_message(call.message.chat.id, "что же нового появилось?", reply_markup=markup)
 
+"""add new bike"""
 @dp.callback_query_handler(lambda c: c.data == 'addNewBike', state=None)  #добавление байка в базу
 async def continueReg(call: types.callback_query):
     await AddBike.Model.set()
@@ -144,16 +147,18 @@ async def get_address(message: types.Message, state: FSMContext):
     await AddBike.photo.set()
     await message.answer("Добавь фотографию байка", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddBike.photo, content_types=['photo']) #дописать загрузку фотографий
+@dp.message_handler(state=AddBike.photo, content_types=['photo']) #
 async def get_photo(message: types.Message, state: FSMContext):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.ShowFreeBikes, but.home)
     await state.update_data(photo=message.photo)
     data = await state.get_data()
     BD.addBikeToSQL(data)
     name = data['RegNumber']
     await message.photo[-1].download(destination_file=f'{osSiS.DirBikes}/{name}.jpg')
-    await message.answer("байк добавлен в базу")
+    await message.answer("байк добавлен в базу", reply_markup=markup)
     await state.finish()
 
+"""add New Owner"""
 @dp.callback_query_handler(lambda c: c.data == 'addNewOwner', state=None)  #добавление оунера в базу
 async def continueReg(call: types.callback_query):
     await AddOwner.owner.set()
@@ -173,6 +178,7 @@ async def CourseChoise(message: types.Message, state: FSMContext):
     await message.answer(f"Oунер сохранен")
     await state.finish()
 
+"""add QR to Base"""
 @dp.callback_query_handler(lambda c: c.data == 'DownoadQR', state=None)  #добавление QR в базу
 async def continueReg(call: types.callback_query):
     await AddQRPetrol.RegNumber.set()
@@ -196,6 +202,8 @@ async def get_photo_QR(message: types.Message, state: FSMContext):
         await message.answer("QR уже в базе")
     await state.finish()
 
+"""Bikes Menu"""
+
 @dp.callback_query_handler(lambda c: c.data == "BikesMenu")  #открывает меню по байкам для админа
 async def BikesMenu(call: types.callback_query):
     markup = InlineKeyboardMarkup(row_width=1).add(but.ShowRentBikes, but.ShowFreeBikes, but.home)
@@ -203,11 +211,18 @@ async def BikesMenu(call: types.callback_query):
 
 @dp.callback_query_handler(lambda c: c.data == "ShowFreeBikes")  # show free bikes
 async def ShowFreeBikes(call: types.callback_query):
-    await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes())
+    await bot.send_message(call.message.chat.id, f"На данный момент свободны:", reply_markup=but.makeButtonBikes('free'))
 
+@dp.callback_query_handler(lambda c: c.data == "ShowRentBikes")  # show free bikes
+async def ShowFreeBikes(call: types.callback_query):
+    await bot.send_message(call.message.chat.id, f"Вот, что ездит в аренде", reply_markup=but.makeButtonBikes('rent'))
 @dp.callback_query_handler(but.buttonFreeBikes.filter())  # show chosen Bike
 async def continueReg(call: types.callback_query, callback_data: dict):
-    markup = InlineKeyboardMarkup(row_width=1).add(but.BookingBike(callback_data.get('RegNumber')), but.ShowFreeBikes, but.home)
+    markup = InlineKeyboardMarkup(row_width=1).add(but.ShowFreeBikes, but.home)
+    if BD.giveBikefromSQL(callback_data.get('RegNumber'))[8] == 'free':
+        markup.add(but.BookingBike(callback_data.get('RegNumber')))
+    elif BD.giveBikefromSQL(callback_data.get('RegNumber'))[8] == 'rent':
+        markup.add(but.StopBookingBike(callback_data.get('RegNumber')))
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
     await bot.send_message(call.message.chat.id, f"{bike[1]}\n{bike[2]}\nОунер: {bike[3]}\n"
                                                  f"Себес в месяц {bike[4]} LKR\nСебес в день {bike[5]} LKR")
@@ -216,9 +231,16 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 
 """BookingBike"""
 
-@dp.callback_query_handler(but.BikeRegNum.filter(), state=None)  #
+@dp.callback_query_handler(but.BikeStopRent.filter())  #
+async def StopBookingBike(call: types.callback_query, callback_data: dict):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.home, but.BikesMenu)
+    BD.changeStatusBike(callback_data.get('RegNum'), "free")
+    daysCount = BD.calculateRent(callback_data.get('RegNumber'))
+    await bot.send_message(call.message.chat.id, "Аренда байка остановлена", reply_markup=markup)
+
+@dp.callback_query_handler(but.BikeStartRent.filter(), state=None)  #
 async def BookingBike(call: types.callback_query, callback_data: dict, state: FSMContext):
-    await state.update_data(Client=callback_data.get('RegNum'))
+    await state.update_data(RegNumber=callback_data.get('RegNum'))
     await AddBookingBike.Client.set()
     await bot.send_message(call.message.chat.id, "WHO?", reply_markup=but.ButtonsClients())
 
@@ -226,20 +248,26 @@ async def BookingBike(call: types.callback_query, callback_data: dict, state: FS
 async def CourseChoise(message: types.Message, state: FSMContext):
     await state.update_data(Client=message.text)
     await AddBookingBike.Money.set()
-    await message.answer(f"how much?", reply_markup=but.cancelOperation())
+    await message.answer(f"how much per day?", reply_markup=but.cancelOperation())
 
 @dp.message_handler(state=AddBookingBike.Money)  #
 async def CourseChoise(message: types.Message, state: FSMContext):
     await state.update_data(Money=message.text)
+    data = await state.get_data()
+    if int(message.text) + int(message.text) * 0.2 < int(BD.giveBikefromSQL(data['RegNumber'])[5]):
+        await message.answer("работаем в минус!!!!!")
+    await state.update_data(OwnerPrice=BD.giveBikefromSQL(data['RegNumber'])[5])
     await AddBookingBike.HowLong.set()
     await message.answer(f"how long?", reply_markup=but.cancelOperation())
 
-@dp.message_handler(state=AddBookingBike.HowLong) #загружает фотографии QR
+@dp.message_handler(state=AddBookingBike.HowLong) #
 async def get_photo_QR(message: types.Message, state: FSMContext):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.ShowFreeBikes, but.home)
     await state.update_data(HowLong=message.text)
     data = await state.get_data()
-    GetFinishRentDate(data["HowLong"])
+    BD.giveBikeRent(data)
     await state.finish()
+    await message.answer("bike booking complete", reply_markup=markup)
 
 """client"""
 @dp.callback_query_handler(lambda c: c.data == "ShowFreeBikesClient")
@@ -264,8 +292,9 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 """all"""
 @dp.callback_query_handler(lambda c: c.data == "cancel", state="*")  #закрывает текущее действие
 async def cancel(call: types.callback_query, state: FSMContext):
+    markup = InlineKeyboardMarkup(row_width=1).add(but.home)
     await state.finish()
-    await bot.send_message(call.message.chat.id, "Заполнение прекращено")
+    await bot.send_message(call.message.chat.id, "Заполнение прекращено", reply_markup=markup)
 
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,
