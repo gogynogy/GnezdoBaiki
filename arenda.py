@@ -1,14 +1,14 @@
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, Location
 from aiogram.utils import executor
 import buttons as but
 import ossistem as osSiS
 from config import TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
-from dateTime import GetFinishRentDate
 from statemash import AddBike, AddOwner, AddQRPetrol, AddBookingBike
+from weather import get_weather
 
 osSiS.checkDir()
 
@@ -294,6 +294,13 @@ async def cancel(call: types.callback_query, state: FSMContext):
     markup = InlineKeyboardMarkup(row_width=1).add(but.home)
     await state.finish()
     await bot.send_message(call.message.chat.id, "Заполнение прекращено", reply_markup=markup)
+
+@dp.message_handler(content_types=["location"])
+async def location(message: types.Message):
+    if message.location is not None:
+        await bot.send_message(message.chat.id, get_weather
+        (message.location.latitude, message.location.longitude))
+
 
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp,
