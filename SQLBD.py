@@ -1,5 +1,5 @@
 import sqlite3
-
+from datetime import timedelta, datetime
 
 from dateTime import GetFinishRentDate, GetToodayDate
 
@@ -228,9 +228,10 @@ class SQL:
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite", error)
 
-    def changeStatusBike(self, RegNumber, Status):
+    def StopRentBike(self, RegNumber, Status):
         try:
-            self.cursor.execute('''UPDATE Bikes SET Status = ? WHERE RegNumber = ?''', (Status, RegNumber))
+            self.cursor.execute('''UPDATE Bikes SET (Status, curentRentFinish) = (?, ?) WHERE RegNumber = ?''',
+                                (Status, "None", RegNumber))
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite changeStatusBike", error)
         finally:
@@ -260,10 +261,18 @@ class SQL:
         today = str(GetToodayDate())
         print(regNumber)
         try:
-            print(self.giveBikefromSQL(regNumber))
-            # self.cursor.execute('''UPDATE Bikes SET Profit = (Profit + ?) WHERE RegNumber = ?''', (int(profit), regNumber))
+            bike = self.giveBikefromSQL(regNumber)
+            self.cursor.execute("SELECT * FROM History WHERE (bike, dateFinish) = (?, ?)", (regNumber, bike[9]))
+            bikeHistory = self.cursor.fetchone()
+            daysCount = datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(bikeHistory[3], "%Y-%m-%d")
+            moneyTotal = daysCount.days * bikeHistory[5]
+            moneyReturn = bikeHistory - moneyTotal
+            print(bikeHistory)
+            self.cursor.execute('''UPDATE History SET (dateFinish, daysCount, moneyTotal) WHERE 
+            (bike, dateFinish) = (?, ?, ?, ?, ?, ?)''', (today, daysCount, moneyTotal, regNumber, bike[9]))
             # self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish) VALUES (?, ?, ?, ?)''',
             #                     (regNumber, client, today, stopRent))
+            return f"байк {regNumber} пробыл в аренде {daysCount} стоимость периода {moneyTotal} возврат {moneyReturn}"
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite giveBikeRent", error)
         finally:

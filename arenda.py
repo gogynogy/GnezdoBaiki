@@ -234,9 +234,8 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 @dp.callback_query_handler(but.BikeStopRent.filter())  #
 async def StopBookingBike(call: types.callback_query, callback_data: dict):
     markup = InlineKeyboardMarkup(row_width=1).add(but.home, but.BikesMenu)
-    BD.changeStatusBike(callback_data.get('RegNum'), "free")
-    daysCount = BD.calculateRent(callback_data.get('RegNum'))
-    await bot.send_message(call.message.chat.id, "Аренда байка остановлена", reply_markup=markup)
+    # BD.StopRentBike(callback_data.get('RegNum'), "free")
+    await bot.send_message(call.message.chat.id, BD.calculateRent(callback_data.get('RegNum')), reply_markup=markup)
 
 @dp.callback_query_handler(but.BikeStartRent.filter(), state=None)  #
 async def BookingBike(call: types.callback_query, callback_data: dict, state: FSMContext):
