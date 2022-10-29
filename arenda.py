@@ -1,11 +1,11 @@
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from aiogram.types import InlineKeyboardMarkup, Location
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils import executor
 import buttons as but
 import ossistem as osSiS
-from config import TOKEN, id_dopusk, id_gosha
+from config import BOT_TOKEN, id_dopusk, id_gosha
 from SQLBD import SQL
 from statemash import AddBike, AddOwner, AddQRPetrol, AddBookingBike
 from weather import get_weather
@@ -15,7 +15,7 @@ osSiS.checkDir()
 BD = SQL()
 BD.checkDB()
 
-bot = Bot(token=TOKEN)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 @dp.message_handler(commands=["start"])  # /start command processing
@@ -28,9 +28,8 @@ async def begin(message: types.Message):
         await bot.send_message(message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(message):
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
-        count = BD.howMutchIsTheFishClient(message.chat.id)
-        await bot.send_message(message.chat.id, f"Пс! Хочешь не много горючки?\n"
-                             f"до конца недели осталось {count}L", reply_markup=markup)
+        await bot.send_message(message.chat.id, f"Привет, это бот по мопедам и сопутствующего\n"
+                             f"Отправь мне локацию, расскажу погоду)", reply_markup=markup)
     else:
         await bot.send_message(message.chat.id, f"Заявка отправлена модератору, ожидай.")
         await bot.send_message(id_gosha, f"Кто-то {message.chat.first_name} хочет топлива\n"
@@ -47,9 +46,8 @@ async def begin(call: types.callback_query):
         await bot.send_message(call.message.chat.id, f"До конца недели осталось {BD.howMutchIsTheFish()}L", reply_markup=markup)
     elif BD.CheckAccount(call.message):
         markup.add(but.GiveQRclient, but.ShowFreeBikesClient)
-        count = BD.howMutchIsTheFishClient(call.message.chat.id)
-        await bot.send_message(call.message.chat.id, f"Пс! Хочешь не много горючки?\n"
-                             f"до конца недели осталось {count}L", reply_markup=markup)
+        await bot.send_message(call.message.chat.id, f"Привет, это бот по мопедам и сопутствующего\n"
+                             f"Отправь мне локацию, расскажу погоду)", reply_markup=markup)
     else:
         await bot.send_message(call.message.chat.id, f"Заявка отправлена модератору, ожидай.")
         await bot.send_message(id_gosha, f"Кто-то {call.message.chat.first_name} хочет топлива\n"
@@ -80,10 +78,12 @@ async def giveQR(call: types.callback_query):
         name = BD.giveFreshQR()
         photo = open(f"{osSiS.DirQR}/{name}.jpg", "rb")
         BD.changeCount('0', name)
+        markup = InlineKeyboardMarkup().add(but.sushi, but.Kosiak)
         await bot.send_photo(call.message.chat.id, photo=photo, reply_markup=markup)
         await bot.answer_callback_query(call.id)
     except:
-        await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось")
+        markup = InlineKeyboardMarkup().add(but.home)
+        await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось", reply_markup=markup)
 
 @dp.callback_query_handler(lambda c: c.data == "GiveQRclient")  #даёт qr
 async def giveQRclient(call: types.callback_query):
@@ -97,6 +97,12 @@ async def giveQRclient(call: types.callback_query):
         await bot.answer_callback_query(call.id)
     except:
         await bot.send_message(call.message.chat.id, "Топливо на неделю кончилось")
+
+@dp.callback_query_handler(lambda c: c.data == "Kosiak")
+async def kosiak(call: types.callback_query):
+    markup = InlineKeyboardMarkup().add(but.home, but.GiveQR)
+    await bot.send_message(call.message.chat.id, "QR помечен не рабочим", reply_markup=markup)
+
 
 @dp.callback_query_handler(lambda c: c.data == "somethingNew")  #создает список пополняемого
 async def somethingNew(call: types.callback_query):
@@ -216,8 +222,8 @@ async def ShowFreeBikes(call: types.callback_query):
 @dp.callback_query_handler(lambda c: c.data == "ShowRentBikes")  # show free bikes
 async def ShowFreeBikes(call: types.callback_query):
     await bot.send_message(call.message.chat.id, f"Вот, что ездит в аренде", reply_markup=but.makeButtonBikes('rent'))
-@dp.callback_query_handler(but.buttonFreeBikes.filter())  # show chosen Bike
-async def continueReg(call: types.callback_query, callback_data: dict):
+@dp.callback_query_handler(but.buttonFreeBikes.filter())  #
+async def openBikeInfo(call: types.callback_query, callback_data: dict):
     markup = InlineKeyboardMarkup(row_width=1).add(but.ShowFreeBikes, but.home)
     if BD.giveBikefromSQL(callback_data.get('RegNumber'))[8] == 'free':
         markup.add(but.BookingBike(callback_data.get('RegNumber')))
@@ -234,7 +240,7 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 @dp.callback_query_handler(but.BikeStopRent.filter())  #
 async def StopBookingBike(call: types.callback_query, callback_data: dict):
     markup = InlineKeyboardMarkup(row_width=1).add(but.home, but.BikesMenu)
-    # BD.StopRentBike(callback_data.get('RegNum'), "free")
+    BD.StopRentBike(callback_data.get('RegNum'), "free")
     await bot.send_message(call.message.chat.id, BD.calculateRent(callback_data.get('RegNum')), reply_markup=markup)
 
 @dp.callback_query_handler(but.BikeStartRent.filter(), state=None)  #
@@ -285,7 +291,7 @@ async def continueReg(call: types.callback_query, callback_data: dict):
 async def continueReg(call: types.callback_query, callback_data: dict):
     bike = BD.giveBikefromSQL(callback_data.get('RegNumber'))
     await bot.send_message(call.message.chat.id, "Заявка отправлена модератору")
-    await bot.send_message(id_gosha, f"{call.message.chat.id} "
+    await bot.send_message(id_gosha, f"{call.message.chat.first_name} "
                                      f"оставил заявку на байк {bike[1]}, {bike[2]} себес {bike[4]}")
 
 """all"""
@@ -298,8 +304,9 @@ async def cancel(call: types.callback_query, state: FSMContext):
 @dp.message_handler(content_types=["location"])
 async def location(message: types.Message):
     if message.location is not None:
+        markup = InlineKeyboardMarkup(row_width=1).add(but.home)
         await bot.send_message(message.chat.id, get_weather
-        (message.location.latitude, message.location.longitude))
+        (message.location.latitude, message.location.longitude), reply_markup=markup)
 
 
 if __name__ == '__main__':

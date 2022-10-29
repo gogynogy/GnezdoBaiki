@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from dateTime import GetFinishRentDate, GetToodayDate
 
@@ -259,15 +259,13 @@ class SQL:
 
     def calculateRent(self, regNumber):
         today = str(GetToodayDate())
-        print(regNumber)
         try:
             bike = self.giveBikefromSQL(regNumber)
             self.cursor.execute("SELECT * FROM History WHERE (bike, dateFinish) = (?, ?)", (regNumber, bike[9]))
             bikeHistory = self.cursor.fetchone()
             daysCount = datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(bikeHistory[3], "%Y-%m-%d")
-            moneyTotal = daysCount.days * bikeHistory[5]
-            moneyReturn = bikeHistory - moneyTotal
-            print(bikeHistory)
+            moneyTotal = daysCount.days * bikeHistory[6]
+            moneyReturn = int(bikeHistory[5]) - int(moneyTotal)
             self.cursor.execute('''UPDATE History SET (dateFinish, daysCount, moneyTotal) WHERE 
             (bike, dateFinish) = (?, ?, ?, ?, ?, ?)''', (today, daysCount, moneyTotal, regNumber, bike[9]))
             # self.cursor.execute('''INSERT INTO History (bike, customer, dateStart, dateFinish) VALUES (?, ?, ?, ?)''',
@@ -277,3 +275,11 @@ class SQL:
             print("Ошибка при работе с SQLite giveBikeRent", error)
         finally:
             self.conn.commit()
+
+    def giveAccountInfo(self, telegramID):
+        try:
+            self.cursor.execute("""SELECT * FROM accounts WHERE IDTelegram = ?""", (telegramID, ))
+            print(self.cursor.fetchone())
+            return self.cursor.fetchall()
+        except sqlite3.Error as error:
+            print("Ошибка при работе с SQLite", error)
