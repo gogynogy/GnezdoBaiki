@@ -35,7 +35,7 @@ def get_weather(Lat, Lng):
         return (f"***{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}***\n"
               f"Погода в городе: {city}\nТемпература: {int(cur_weather / 10)}C° {wd}\n"
               f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст\nВетер: {wind} м/с\n"
-              f"\nПродолжительность дня: {length_of_the_day}\nХорошего дня!")
+              f"Продолжительность дня: {length_of_the_day}")
     except Exception as ex:
         print(ex)
         print("Проверьте название города")
